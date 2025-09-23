@@ -4,11 +4,26 @@ bundle:
 include:
   - resources/*
 
+# Think of artifacts as the built version of your project code that Databricks will actually deploy and run.
+# Instead, you package your code into artifacts (like .whl wheels, JARs, or Docker images) that can be:
+# * uploaded to Databricks
+# * referenced by jobs, clusters, and ML workflows
+# 👉 Artifacts = the "compiled/package outputs" of your project
+
+# Reproducibility: Everyone in dev/acc/prd is running the exact same package, not someone’s half-edited local file.
+
 artifacts:
   default:
     type: whl
     build: uv build
     path: .
+
+# Think of variables as “config knobs” for your bundle.
+# They can be overridden per environment (so dev, acc, prd can each get different values).
+# Examples here:
+# * git_sha → which commit is being deployed.
+# * branch → which branch (e.g. main, develop).
+# * schedule_pause_status → whether scheduled jobs are running (PAUSED vs UNPAUSED).
 
 variables:
   git_sha:
@@ -23,30 +38,45 @@ variables:
 
 
 targets:
+# default: true → this is the default environment if none is specified.
+# mode: development → toggles certain behaviors to be more dev-friendly (like deploying into your user workspace instead of shared).
+# workspace.root_path → your dev jobs/artifacts will go under your /Workspace/Users/... directory to avoid stepping on others.
+# profile: marvelous → This references a section in ~/.databrickscfg for authentication (Databricks CLI profile name).
+
   dev:
     default: true
     mode: development
     workspace:
-      host: <your host>
+      host: https://adb-4304813593296883.3.azuredatabricks.net
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
       profile: marvelous
     variables:
       schedule_pause_status: PAUSED
 
-  acc:
+  acc: # (acceptance/testing) 
+  # Because acceptance is usually a shared environment where multiple people (QA, data scientists, ML engineers, maybe even product managers) access the same deployed jobs, models, or workflows.
+
+# presets.name_prefix: 'acc_' → Jobs, clusters, etc. in this environment will be created with an acc_ prefix (to avoid collisions with prod).
+# workspace.root_path: /Shared/... → Goes into the shared workspace folder, not your personal workspace.
+# Variables → here it keeps jobs paused by default.
+
     presets:
       name_prefix: 'acc_'
     workspace:
-      host: <your host>
+      host: https://adb-4304813593296883.3.azuredatabricks.net
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
       profile: marvelous
     variables:
       schedule_pause_status: PAUSED
 
   prd:
+# mode: production → locks down dev-friendly behaviors. Production deployments are stricter.
+# Workspace path is in /Shared (not in user folders).
+# Variables → schedule_pause_status is set PAUSED here but annotated “normally UNPAUSED” → meaning in real prod you’d allow jobs to run continuously.
+
     mode: production
     workspace:
-      host: <your host>
+      host: https://adb-4304813593296883.3.azuredatabricks.net
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
       profile: marvelous
     variables:
