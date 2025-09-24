@@ -8,6 +8,9 @@
 # import sys
 # sys.path.append(str(Path.cwd().parent / 'src'))
 
+from marvel_characters.config import ProjectConfig
+from marvel_characters.data_processor import DataProcessor
+
 # COMMAND ----------
 import pandas as pd
 import yaml
