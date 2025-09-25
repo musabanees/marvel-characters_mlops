@@ -1,0 +1,89 @@
+
+Lecture 3
+
+experiment = mlflow.set_experiment(experiment_name="/Shared/marvel-demo")
+mlflow.set_experiment_tags({
+    "repository_name": "marvelousmlops/marvel-characters"
+})
+
+Why This is Important
+Organization:
+* Groups related runs together
+* Provides structure for ML experiments
+* Makes it easy to find and compare runs
+Tracking:
+* All runs within this experiment will be grouped
+* Helps track model versions
+* Enables comparison of different approaches
+Collaboration:
+* /Shared/ path makes experiment visible to team
+* Tags help others understand experiment context
+* Links experiment to source code
+Viewing Results
+* In Databricks UI: Navigate to "Experiments" → "/Shared/marvel-demo"
+* Via MLflow API: Use mlflow.get_experiment() with experiment ID
+* Tags can be used for filtering and search
+
+
+Lecture 3
+Marker:2
+
+MLflow Artifacts - What to Store in Real Projects
+1. Model Files & Documentation
+Trained model files (.pkl, .h5, etc.)
+Model architecture diagrams
+Training configuration files (YAML/JSON)
+Data preprocessing pipelines
+Feature engineering scripts
+2. Performance Visualizations
+Confusion matrices
+ROC curves
+Learning curves (loss/accuracy over epochs)
+Precision-Recall curves
+Residual plots for regression models
+3. Feature Analysis
+Feature importance plots
+Correlation matrices
+Feature distribution plots
+PCA/dimensionality reduction visualizations
+SHAP value plots for model interpretability
+4. Data Quality Reports
+Data profiling reports
+Missing value statistics
+Outlier analysis results
+Data drift reports
+Data validation results
+5. Training Process Artifacts
+Training logs
+Validation results
+Cross-validation scores
+Hyperparameter tuning results
+Early stopping checkpoints
+6. Production Readiness
+Model cards
+API documentation
+Inference examples
+Performance benchmarks
+Resource utilization metrics
+7. Environment Details
+Requirements.txt/environment.yml
+Environment variables (non-sensitive)
+Hardware specifications
+Dependencies list
+Runtime configurations
+8. Compliance & Governance
+Model factsheets
+Bias assessment reports
+Ethics checklist
+Data privacy audit results
+Model versioning history
+These artifacts help teams:
+
+Debug model issues
+Compare experiments
+Reproduce results
+Deploy models confidently
+Maintain compliance
+Share knowledge
+Track model lineage
+Claude Sonnet 3.5 • 1x

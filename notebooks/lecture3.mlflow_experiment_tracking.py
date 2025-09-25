@@ -4,14 +4,19 @@ import os
 
 import mlflow
 from dotenv import load_dotenv
+import subprocess
 
 
 # Set up Databricks or local MLflow tracking
+# Checks if the code is running in Databricks vs local environment
+# Returns True if running in Databricks, False if running locally
+# Uses environment variable check as the detection method
 def is_databricks() -> bool:
     """Check if the code is running in a Databricks environment."""
     return "DATABRICKS_RUNTIME_VERSION" in os.environ
 
 # COMMAND ----------
+# When no tracking URI is set, MLflow uses a local mlruns directory
 mlflow.get_tracking_uri()
 
 # COMMAND ----------
@@ -23,8 +28,20 @@ if not is_databricks():
 
 mlflow.get_tracking_uri()
 # COMMAND ----------
+
+# Creates a new experiment if it doesn't exist
+# Sets it as the active experiment
+# Path /Shared/marvel-demo indicates location in Databricks workspace
+# Returns an Experiment object
 experiment = mlflow.set_experiment(experiment_name="/Shared/marvel-demo")
-mlflow.set_experiment_tags({"repository_name": "marvelousmlops/marvel-characters"})
+
+# Setting Experiment Tags:
+# Adds metadata to the experiment
+# Tags help with organization and searching
+# In this case, links experiment to GitHub repository
+
+# More information refer the notes..
+mlflow.set_experiment_tags({"repository_name": "musabanees/marvel-characters_mlops"})
 
 print(experiment)
 # COMMAND ----------
@@ -39,12 +56,19 @@ mlflow.get_experiment(experiment.experiment_id)
 # COMMAND ----------
 # search for experiment
 experiments = mlflow.search_experiments(
-    filter_string="tags.repository_name='marvelousmlops/marvel-characters'"
+    filter_string="tags.repository_name='musabanees/marvel-characters_mlops'"
 )
 print(experiments)
 
 # COMMAND ----------
 # start a run
+# Creates a new MLflow run within the active experiment
+# * Sets up a context for logging:
+# * Parameters
+# * Metrics
+# * Artifacts
+# * Models
+
 mlflow.start_run()
 
 # COMMAND ----------
@@ -56,19 +80,36 @@ mlflow.end_run()
 print(mlflow.active_run() is None)
 
 # COMMAND ----------
-# start a run
+
+
+# 👉 Why log it in MLflow?
+# Because later — months or years from now — you’ll wonder:
+
+# Which exact code branch / commit did we use to train Model v3?
+# If you logged the git_sha as a tag/param in MLflow, you can check the run metadata → and checkout that commit from git, guaranteeing reproducibility.
+
+git_sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
+print("Current Git SHA:", git_sha)
+
+# start a run and end after the complete run.
 with mlflow.start_run(
     run_name="marvel-demo-run",
-    tags={"git_sha": "1234567890abcd"},
+    tags={"git_sha": git_sha},
     description="marvel character prediction demo run",
 ) as run:
     run_id = run.info.run_id
     mlflow.log_params({"type": "marvel_demo"})
     mlflow.log_metrics({"metric1": 1.0, "metric2": 2.0})
 # COMMAND ----------
+
+# If this returns True, This means no run is currently in progress
+
 print(mlflow.active_run() is None)
 
 # COMMAND ----------
+
+# This code retrieves and displays detailed information about a specific MLflow run
+
 run_info = mlflow.get_run(run_id=run_id).to_dictionary()
 print(run_info)
 
@@ -86,7 +127,7 @@ print(run_info["data"]["params"])
 
 run_id = mlflow.search_runs(
     experiment_names=["/Shared/marvel-demo"],
-    filter_string="tags.git_sha='1234567890abcd'",
+    filter_string=f"tags.git_sha='{git_sha}'",
 ).run_id[0]
 run_info = mlflow.get_run(run_id=f"{run_id}").to_dictionary()
 print(run_info)
@@ -98,10 +139,39 @@ mlflow.start_run(run_id=run_id)
 # this will fail: not allowed to overwrite value
 mlflow.log_param("type", "marvel_demo2")
 # COMMAND ----------
+
+# The key is to log any parameter that:
+
+# Affects model behavior
+# Is needed for reproduction
+# Helps with experiment tracking
+# Provides context for results
+# Could be tuned in future iterations
+
+# There are 2 ways to add the parameters
+# Way 1: log multiple params at once
+mlflow.log_params({
+    # Feature selection
+    "selected_features": ["height", "weight", "years_active"],
+    "feature_engineering_methods": "one_hot_encoding",
+    
+    # Data filtering
+    "min_age": 18,
+    "max_age": 100,
+    "outlier_removal_method": "IQR"
+})
+
+# Way 2: log one param at a time
 mlflow.log_param(key="purpose", value="get_certified")
+
 mlflow.end_run()
 
 # COMMAND ----------
+
+# This time we will log metrics and artifacts
+# And we assume the git git_sha
+# We save alot of information related to the experiment, for more information read: Marker:2
+
 # start another run and log other things
 mlflow.start_run(run_name="marvel-demo-run-extra",
                  tags={"git_sha": "1234567890abcd"},
@@ -110,6 +180,8 @@ mlflow.log_metric(key="metric3", value=3.0)
 # dynamically log metric (trainings epochs)
 for i in range(0,3):
     mlflow.log_metric(key="metric1", value=3.0+i/2, step=i)
+
+
 mlflow.log_artifact("../demo_artifacts/mlflow_meme.jpeg")
 mlflow.log_text("hello, MLflow!", "hello.txt")
 mlflow.log_dict({"k": "v"}, "dict_example.json")
@@ -117,6 +189,10 @@ mlflow.log_artifacts("../demo_artifacts", artifact_path="demo_artifacts")
 
 # COMMAND ----------
 # log figure
+
+# We can save any file as an artifact, this could be model files, experiment related files, images, figures, etc.
+# we can view that in the experiment UI
+
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
@@ -126,6 +202,7 @@ mlflow.log_figure(fig, "figure.png")
 
 # log image dynamically
 # COMMAND ----------
+
 import numpy as np
 
 for i in range(0,3):
@@ -154,7 +231,14 @@ runs
 
 # COMMAND ----------
 # load objects
+
+# Gets the URI (location) of artifacts from the first run in our filtered results
+# runs was created from mlflow.search_runs() with specific filters
+# The URI points to where MLflow stored all artifacts for that run
+
 artifact_uri = runs.artifact_uri[0]
+
+# Loads the previously saved JSON dictionary
 mlflow.artifacts.load_dict(f"{artifact_uri}/dict_example.json")
 # nested runs
 
