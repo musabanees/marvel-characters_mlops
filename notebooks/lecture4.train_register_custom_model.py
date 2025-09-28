@@ -25,6 +25,10 @@ if not is_databricks():
     mlflow.set_registry_uri(f"databricks-uc://{profile}")
 
 
+#  Databricks Asset Bundle, is a Bundle is your "project-in-a-box," defined by the databricks.yml file. When you deploy your project using the bundle (from your command line or a CI/CD system), the bundle is aware of the Git repository it's in.
+# It automatically captures the commit hash and branch name.
+# The magic happens inside your databricks.yml file, where you can use special placeholders to pass this information to your training job.
+
 config = ProjectConfig.from_yaml(config_path="../project_config_marvel.yml", env="dev")
 spark = SparkSession.builder.getOrCreate()
 tags = Tags(**{"git_sha": "abcd12345", "branch": "main"})
@@ -33,6 +37,14 @@ marvel_characters_v = version("marvel_characters")
 code_paths=[f"../dist/marvel_characters-{marvel_characters_v}-py3-none-any.whl"]
 
 # COMMAND ----------
+
+# This is the low-level client API for interacting with the MLflow tracking server and Model Registry.
+# With this object, you can:
+    # * Search experiments
+    # * Register models
+    # * Fetch model versions
+    # * Move models between stages (Staging → Production)
+    # * Manage aliases (like latest-model)
 client = MlflowClient()
 wrapped_model_version = client.get_model_version_by_alias(
     name=f"{config.catalog_name}.{config.schema_name}.marvel_character_model_basic",
@@ -46,6 +58,13 @@ X_test = test_set[config.num_features + config.cat_features]
 # COMMAND ----------
 pyfunc_model_name = f"{config.catalog_name}.{config.schema_name}.marvel_character_model_custom"
 wrapper = MarvelModelWrapper()
+
+# Logs a new MLflow model using PyFunc flavor, where:
+# * The sklearn LightGBM pipeline is logged as an artifact inside it (lightgbm-pipeline).
+# * The wrapper adds custom .predict() logic (turning 0/1 into “alive/dead”).
+# * Dependencies (code_paths, .whl) are bundled so it can be deployed anywhere.
+# * The run is also logged into the specified experiment (experiment_name).
+# This will create a new model version in the Model Registry under the specified name (pyfunc_model_name).
 wrapper.log_register_model(wrapped_model_uri=f"models:/{wrapped_model_version.model_id}",
                            pyfunc_model_name=pyfunc_model_name,
                            experiment_name=config.experiment_name_custom,

@@ -87,3 +87,63 @@ Maintain compliance
 Share knowledge
 Track model lineage
 Claude Sonnet 3.5 • 1x
+
+
+
+Lecture 4
+
+## MLflow Model: A Standard Shipping Container 📦
+
+* **What it is**: An MLflow Model is a **standard format** for packaging your trained model. Think of it as a universal "shipping container." Whether you're shipping a car (a scikit-learn model) or furniture (a PyTorch model), it goes into the same standardized container.
+* **Why it's important**: This standard format means that any tool that understands MLflow can use your model, without needing to know the specific details of the original library.
+
+## Flavors: The "How-To" Manual for Each Library  flavors
+
+* **What they are**: Flavors are **wrappers** for specific ML libraries like scikit-learn, TensorFlow, or LightGBM. Each flavor knows the best way to save and load a model from its specific library.
+* **How they work (the diagram)**: The diagram shows a `LogisticRegression` model from scikit-learn.
+    1.  Internally, this model can be saved using different tools like **pickle**, **cloudpickle**, or **joblib**. These are the underlying serialization libraries.
+    2.  The **MLflow `sklearn` flavor** provides a simple, consistent set of functions: `save_model()`, `load_model()`, and `predict()`.
+    3.  When you call `mlflow.sklearn.save_model()`, the flavor automatically handles the "best" way to pickle the model for you. It hides the messy details and just works.
+* **The benefit**: This ensures that models from different libraries can all be managed with the same simple commands, making your deployment process consistent and reliable.
+
+## Custom `pyfunc`: The "Do-It-Yourself" Flavor 🧑‍🔧
+
+* **What it is**: Sometimes you have a model from a library that MLflow doesn't have a built-in flavor for, or you have a complex model that includes pre-processing and post-processing steps.
+* **How it helps**: The `pyfunc` flavor is a universal Python function flavor. It allows you to create your own wrapper, giving you the flexibility to package *any* Python code that acts like a model into the standard MLflow format.
+
+--------------------
+
+# What are MLflow Flavors?
+A flavor in MLflow is basically a wrapper describing how a model can be saved, loaded, and used.
+
+Different ML libraries (scikit‑learn, PyTorch, TensorFlow, XGBoost, etc.) all have their own serialization methods and APIs.
+MLflow bottles them up into a single MLflow Model format, but provides multiple flavors so the same model can be understood and served in different contexts.
+Think of “flavors” as labels on a food package → one label for vegetarians, one for calorie counters, one for diabetics. The food is the same inside, but each label explains how different groups should interpret it.
+
+## Two Common Flavors
+You saw two in your file:
+
+1️⃣ python_function (pyfunc) flavor
+The universal flavor in MLflow.
+Every MLflow model is also saved as a pyfunc model.
+Guarantees that you can always load & call it in a generic way with:
+
+Python```
+model = mlflow.pyfunc.load_model("runs:/<run_id>/model")
+preds = model.predict(data)
+```
+Why? Because pyfunc defines a standard API:
+Always has predict()
+Can be served via MLflow’s REST API, Model Serving, or mlflow models serve.
+👉 Think of pyfunc = MLflow’s universal adapter plug.
+
+2️⃣ Library-specific flavor (here: sklearn)
+This is the native flavor, specific to the original framework you trained in.
+Stores extra details needed by that framework:
+pickled_model: the Pickle/Cloudpickle file for your sklearn pipeline.
+sklearn_version: version used (so you don’t load with an incompatible one).
+Then you can load back with:
+
+Python```
+model = mlflow.sklearn.load_model("runs:/<run_id>/model")
+```

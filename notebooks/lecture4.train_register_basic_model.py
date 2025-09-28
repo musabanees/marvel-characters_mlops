@@ -47,7 +47,12 @@ basic_model.train()
 basic_model.log_model()
 
 # COMMAND ----------
+
+# This retrieves metadata about a model that was logged in MLflow.
+# basic_model.model_info.model_id → is an internal identifier returned when the model was first logged with mlflow.sklearn.log_model(...).
+# mlflow.get_logged_model(...) → gives you a LoggedModel object, which is basically a metadata wrapper.
 logged_model = mlflow.get_logged_model(basic_model.model_info.model_id)
+
 model = mlflow.sklearn.load_model(f"models:/{basic_model.model_info.model_id}")
 
 # COMMAND ----------
@@ -71,11 +76,18 @@ model = mlflow.sklearn.load_model(f"runs:/{run_id}/lightgbm-pipeline-model")
 run = mlflow.get_run(basic_model.run_id)
 
 # COMMAND ----------
+
+# When you logged your training/testing data earlier in log_model() (with mlflow.log_input(train_dataset, context="training")), MLflow stored those dataset references inside the run.
+# run.inputs.dataset_inputs → retrieves the list of all dataset inputs associated with that run.
 inputs = run.inputs.dataset_inputs
 training_input = next((x for x in inputs if len(x.tags) > 0 and x.tags[0].value == 'training'), None)
+
+# Dataset inputs are an abstraction (like a pointer).
+# mlflow.data.get_source() resolves it to an actual data source object — this contains where the dataset lives (Delta table name, version, storage path).
 training_source = mlflow.data.get_source(training_input)
 training_source.load()
 # COMMAND ----------
+inputs = run.inputs.dataset_inputs
 testing_input = next((x for x in inputs if len(x.tags) > 0 and x.tags[0].value == 'testing'), None)
 testing_source = mlflow.data.get_source(testing_input)
 testing_source.load()
