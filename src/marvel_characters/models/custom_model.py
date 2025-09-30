@@ -10,7 +10,7 @@ from mlflow.utils.environment import _mlflow_conda_env
 
 from marvel_characters.config import Tags
 
-
+# We define this function above with the MarvelModelWrapper to package it together with the model
 def adjust_predictions(predictions: np.ndarray | list[int]) -> dict[str, list[str]]:
     """Adjust predictions to human-readable format."""
     return {"Survival prediction": ["alive" if pred == 1 else "dead" for pred in predictions]}
@@ -22,7 +22,7 @@ class MarvelModelWrapper(mlflow.pyfunc.PythonModel):
     def load_context(self, context: PythonModelContext) -> None:
         """Load the LightGBM model."""
 
-        # When MLflow reloads this model:
+        # mlflow.pyfunc.PythonModel has this method which actually loads the model.
         # It passes in context which contains all artifacts.
         # This line tells the wrapper to:
         # Find the underlying LightGBM model in the artifacts dict (logged earlier as "lightgbm-pipeline").
@@ -92,7 +92,7 @@ class MarvelModelWrapper(mlflow.pyfunc.PythonModel):
             model_info = mlflow.pyfunc.log_model(
                 python_model=self,
                 name="pyfunc-wrapper",
-                artifacts={"lightgbm-pipeline": wrapped_model_uri},
+                artifacts={"lightgbm-pipeline": wrapped_model_uri}, # lightgbm-pipeline is the name of the folder where the model is stored, we can say this
                 signature=signature,
                 code_paths=code_paths,
                 conda_env=conda_env,

@@ -1,5 +1,6 @@
 # Databricks notebook source
-# MAGIC %pip install marvel_characters-1.0.1-py3-none-any.whl
+# MAGIC %pip install ../dist/marvel_characters-0.1.0-py3-none-any.whl
+
 
 # COMMAND ----------
 # MAGIC %restart_python
@@ -23,8 +24,10 @@ from marvel_characters.utils import is_databricks
 # spark session
 spark = SparkSession.builder.getOrCreate()
 
+# This line creates an instance of the WorkspaceClient from the Databrsicks SDK.    
 w = WorkspaceClient()
 
+# This is the most important line for security. It generates a temporary, short-lived authentication token.
 os.environ["DBR_HOST"] = w.config.host
 os.environ["DBR_TOKEN"] = w.tokens.create(lifetime_seconds=1200).token_value
 
@@ -41,6 +44,9 @@ schema_name = config.schema_name
 
 # COMMAND ----------
 # Initialize model serving
+
+# So this is a helper class written in your project (marvel_characters) to manage Databricks Model Serving endpoints.
+# Instead of you manually building REST API payloads to call Databricks APIs, this class probably wraps around those MLflow + Databricks SDK calls so it’s easier
 model_serving = ModelServing(
     model_name=f"{catalog_name}.{schema_name}.marvel_character_model_custom", endpoint_name="marvel-character-model-serving"
 )

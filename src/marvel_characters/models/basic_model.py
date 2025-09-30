@@ -235,7 +235,7 @@ class BasicModel:
             return True
         else:
             logger.info("Current model does not improve over latest. Returning False.")
-            return False
+            return False    
 
 
     # By registering the model, it becomes:

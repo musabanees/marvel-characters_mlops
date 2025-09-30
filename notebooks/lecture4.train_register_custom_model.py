@@ -1,3 +1,8 @@
+
+# Databricks notebook source
+# MAGIC %pip install ../dist/marvel_characters-0.1.0-py3-none-any.whl
+
+
 # Databricks notebook source
 
 import mlflow
@@ -65,6 +70,7 @@ wrapper = MarvelModelWrapper()
 # * Dependencies (code_paths, .whl) are bundled so it can be deployed anywhere.
 # * The run is also logged into the specified experiment (experiment_name).
 # This will create a new model version in the Model Registry under the specified name (pyfunc_model_name).
+# wrapped_model_uri is the a pointer to the underlying LightGBM pipeline model.
 wrapper.log_register_model(wrapped_model_uri=f"models:/{wrapped_model_version.model_id}",
                            pyfunc_model_name=pyfunc_model_name,
                            experiment_name=config.experiment_name_custom,

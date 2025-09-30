@@ -2,7 +2,9 @@ bundle:
   name: marvel-characters
 
 include:
-  - resources/*
+  - resources/*.yml
+  - resources/*.yaml
+  - resources/*.json
 
 # Think of artifacts as the built version of your project code that Databricks will actually deploy and run.
 # Instead, you package your code into artifacts (like .whl wheels, JARs, or Docker images) that can be:
@@ -49,7 +51,7 @@ targets:
     workspace:
       host: https://dbc-2d131fd0-7558.cloud.databricks.com/
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
-      profile: marvelous
+      profile: dbc-2d131fd0-7558
     variables:
       schedule_pause_status: PAUSED
 
@@ -65,7 +67,7 @@ targets:
     workspace:
       host: https://dbc-2d131fd0-7558.cloud.databricks.com/
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
-      profile: marvelous
+      profile: dbc-2d131fd0-7558
     variables:
       schedule_pause_status: PAUSED
 
@@ -78,6 +80,6 @@ targets:
     workspace:
       host: https://dbc-2d131fd0-7558.cloud.databricks.com/
       root_path: /Shared/.bundle/${bundle.target}/${bundle.name}
-      profile: marvelous
+      profile: dbc-2d131fd0-7558
     variables:
       schedule_pause_status: PAUSED # normally UNPAUSED
